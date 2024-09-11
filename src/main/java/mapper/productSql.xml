@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ProductDao">
+
+    <resultMap type="product" id="productResult">
+        <id column="PCODE" property="pcode"/>
+        <result column="PNAME" property="pname"/>
+        <result column="PTYPE" property="ptype"/>
+        <result column="PRICE" property="price"/>
+        <result column="CREDATE" property="creDate"/>
+        <result column="PIMG" property="pimg"/>
+        <result column="DES" property="des"/>
+        <result column="PREGDATE" property="pregDate"/>
+        <result column="QUALITY" property="quality"/>
+        <result column="ID" property="id"/>
+        <result column="FNAME" property="fname"/>
+        <result column="FNUM" property="fnum"/>
+        <result column="FADDRESS" property="faddress"/>
+        <result column="FZCODE" property="fzcode"/>
+        <result column="PDELCHECK" property="pdelcheck"/>
+    </resultMap>
+    
+    <select id="getProductsByPtype" parameterType="String" resultMap="productResult">
+		SELECT * FROM product
+		<where>
+			<choose>
+				<when test="ptype != null and ptype != ''"> AND ptype = #{ptype} </when>
+				<otherwise> AND ptype = '곡물' </otherwise>
+			</choose>
+		</where>
+	</select>
+	<!-- pdelcheck가 0 -->
+	<select id="getTopProducts" resultMap="productResult">
+	 SELECT p.PNAME AS pname, p.PCODE AS pcode, p.PIMG AS pimg, p.PRICE AS price 
+	FROM PAY pay 
+	JOIN product p ON pay.NAME = p.PNAME 
+	WHERE pay.RSTATE = '결제완료' AND p.pdelcheck = '0' 
+	GROUP BY p.PNAME, p.PCODE, p.PIMG, p.PRICE 
+	ORDER BY COUNT(pay.NAME) DESC 
+	LIMIT 3;
+	</select>
+	    
+    
+	<!-- 전체 상품 리스트 조회 -->
+    <select id="getProductList" parameterType="map" resultMap="productResult">
+        SELECT * FROM PRODUCT
+        WHERE PTYPE = #{ptype} and pdelcheck = '0' ORDER BY PREGDATE DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+	<!-- 코드로 상세정보 조회 -->
+    <select id="getProductByCode" parameterType="String" resultMap="productResult">
+        SELECT * FROM PRODUCT
+        WHERE PCODE = #{pcode} and pdelcheck = '0'
+    </select>
+    <select id="getProductByCodeDetail" parameterType="String" resultMap="productResult">
+        SELECT * FROM PRODUCT
+        WHERE PCODE = #{pcode}
+    </select>
+	<!-- 검색결과 리스트 -->
+    <select id="searchProducts" parameterType="map" resultMap="productResult">
+        SELECT * FROM PRODUCT
+        WHERE PNAME LIKE CONCAT('%', #{keyword}, '%') and pdelcheck = '0'
+        <if test="ptype != null">
+            AND PTYPE = #{ptype}
+        </if>
+        LIMIT #{offset}, #{pageSize}
+    </select>
+	<!-- 전체상품  -->
+    <select id="getTotalProducts" parameterType="String" resultType="int">
+        SELECT COUNT(*) FROM PRODUCT WHERE PTYPE = #{ptype} and pdelcheck = '0'
+    </select>
+
+    <select id="getTotalProductsByKeyword" parameterType="map" resultType="int">
+        SELECT COUNT(*) FROM PRODUCT
+        WHERE PNAME LIKE CONCAT('%', #{keyword}, '%') and pdelcheck = '0'
+        <if test="ptype != null">
+            AND PTYPE = #{ptype}
+        </if>
+    </select>
+    
+    <select id="agetProductList" resultMap="productResult">
+    SELECT * FROM PRODUCT
+    WHERE PDELCHECK = '0'
+    <if test="searchCondition != null and searchKeyword != null and searchKeyword != ''">
+        AND ${searchCondition} LIKE CONCAT('%', #{searchKeyword}, '%')
+    </if>
+</select>
+    
+    <select id="getFarmerProductList" resultType="product">
+    SELECT * FROM PRODUCT 
+    WHERE ID = #{id} 
+    AND PDELCHECK = '0'
+    <if test="searchKeyword != null and searchKeyword != ''">
+        AND PNAME LIKE CONCAT('%', #{searchKeyword}, '%')
+    </if>
+</select>
+    
+    <select id="agetProductByCode" resultType="product">
+    SELECT * FROM PRODUCT WHERE PCODE = #{pcode}
+    AND PDELCHECK = '0'
+	</select>
+	
+	<insert id="insertProduct" parameterType="product">
+    INSERT INTO PRODUCT (PCODE, PNAME, PTYPE, PRICE, CREDATE, PIMG, DES, PREGDATE, QUALITY, ID, FNAME, FNUM, FADDRESS, FZCODE)
+    VALUES (#{pcode}, #{pname}, #{ptype}, #{price}, #{creDate}, #{pimg}, #{des}, NOW(), #{quality}, #{id}, #{fname}, #{fnum}, #{faddress}, #{fzcode})
+	</insert>
+	
+	<insert id="insertProductWithUserInfo" parameterType="product">
+        INSERT INTO PRODUCT (PCODE, PNAME, PTYPE, PRICE, CREDATE, PIMG, DES, PREGDATE, QUALITY, ID, FNAME, FNUM, FADDRESS, FZCODE)
+        SELECT #{pcode}, #{pname}, #{ptype}, #{price}, #{creDate}, #{pimg}, #{des}, NOW(), #{quality}, u.ID, u.FNAME, u.FNUM, u.FADDRESS, u.FZCODE
+        FROM USER u
+        WHERE u.ID = #{id}
+    </insert>
+	
+	 <update id="updateProduct" parameterType="product">
+        UPDATE PRODUCT SET
+        PNAME = #{pname},
+        PTYPE = #{ptype},
+        PRICE = #{price},
+        CREDATE = #{creDate},
+        PIMG = #{pimg},
+        DES = #{des},
+        QUALITY = #{quality},
+        FNAME = #{fname},
+        FNUM = #{fnum},
+        FADDRESS = #{faddress},
+        FZCODE = #{fzcode}
+        WHERE PCODE = #{pcode}
+    </update>
+
+    <update id="deleteProduct" parameterType="String">
+    UPDATE PRODUCT 
+    SET PDELCHECK = '1'
+    WHERE PCODE = #{pcode}
+	</update>
+    
+    <select id="searchFarmersByName" resultType="com.spring.farmily.user.model.UserVO">
+    SELECT ID, FNAME, FNUM, FADDRESS, FZCODE 
+    FROM USER
+    WHERE FNAME LIKE CONCAT('%', #{keyword}, '%')
+    AND ROLE = 'F'
+</select>
+<select id="countPcode" resultType="int">
+    SELECT COUNT(*) FROM PRODUCT WHERE PCODE = #{pcode}
+</select>
+
+<select id="getFarmInfoByUserId" resultType="product">
+    SELECT FNAME, FNUM, FADDRESS, FZCODE, ID 
+    FROM USER 
+    WHERE ID = #{userId}
+</select>
+
+<!-- 페이징 처리된 상품 리스트 조회 -->
+    <select id="getProductsByPage" resultMap="productResult">
+        SELECT * 
+        FROM PRODUCT
+        WHERE PDELCHECK = '0'
+        AND ID = #{id}
+        <if test="searchKeyword != null and searchKeyword != ''">
+            AND PNAME LIKE CONCAT('%', #{searchKeyword}, '%')
+        </if>
+        ORDER BY PREGDATE DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 전체 상품 수 카운트 -->
+    <select id="getProductCount" resultType="int">
+        SELECT COUNT(*) 
+        FROM PRODUCT 
+		WHERE PDELCHECK = '0'
+		AND ID = #{id}
+        <if test="searchKeyword != null and searchKeyword != ''">
+            AND PNAME LIKE CONCAT('%', #{searchKeyword}, '%')
+        </if>
+    </select>
+    
+    <select id="getAllProductsByPage" resultMap="productResult">
+        SELECT * 
+        FROM PRODUCT
+        WHERE PDELCHECK = '0'
+    <choose>
+        <when test="searchCondition == 'pname'">
+            AND PNAME LIKE CONCAT('%', #{searchKeyword}, '%')
+        </when>
+        <when test="searchCondition == 'fname'">
+            AND FNAME LIKE CONCAT('%', #{searchKeyword}, '%')
+        </when>
+        <when test="searchCondition == 'id'">
+            AND ID LIKE CONCAT('%', #{searchKeyword}, '%')
+        </when>
+    </choose>
+    ORDER BY PREGDATE DESC
+    LIMIT #{limit} OFFSET #{offset}
+</select>
+
+    <!-- 관리자전체 상품 수 카운트 -->
+    <select id="getAllProductCount" resultType="int">
+        SELECT COUNT(*) 
+        FROM PRODUCT 
+        WHERE PDELCHECK = '0'
+    <choose>
+        <when test="searchCondition == 'pname'">
+            AND PNAME LIKE CONCAT('%', #{searchKeyword}, '%')
+        </when>
+        <when test="searchCondition == 'fname'">
+            AND FNAME LIKE CONCAT('%', #{searchKeyword}, '%')
+        </when>
+        <when test="searchCondition == 'id'">
+            AND ID LIKE CONCAT('%', #{searchKeyword}, '%')
+        </when>
+    </choose>
+</select>
+</mapper>

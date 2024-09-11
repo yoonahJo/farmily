@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="UserFarmDao"> 
+  	<select id="login" resultType="user">
+   	 	<![CDATA[
+    		select id, role, password from user where id = #{id}
+   	 	]]>
+  	</select> 
+  	<select id="myinfo" resultType="user">
+   	 	<![CDATA[
+    		select id,password,uname,birth,email,phone,uaddress,uzcode,
+    		role,gender,fname,fnum,fzcode,faddress from user where id = #{id}
+   	 	]]>
+  	</select>
+  	<update id="update" parameterType="user">
+   	 	<![CDATA[
+    		UPDATE USER SET uname=#{uname}, phone=#{phone}, 
+    		email=#{email}, uzcode=#{uzcode}, uaddress=#{uaddress}, fname=#{fname}, 
+    		fzcode=#{fzcode}, faddress=#{faddress} WHERE id=#{id}
+   	 	]]>
+  	</update>
+  	<update id="leave" parameterType="user">
+   	 	<![CDATA[
+    		DELETE FROM USER WHERE id=#{id}
+   	 	]]>
+  	</update>  
+  		<update id="changePwd" parameterType="user">
+   	 	<![CDATA[
+    		UPDATE USER SET password=#{password} WHERE id=#{id}
+   	 	]]>
+  	</update>
+</mapper>

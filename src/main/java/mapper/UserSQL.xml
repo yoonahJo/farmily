@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+	<mapper namespace="userDao">
+	
+	<!-- 기본 기능 -->
+	<select id="userLogin" resultType="user">
+		 <![CDATA[
+	      SELECT ID, ROLE, UNAME, PASSWORD FROM USER WHERE ID=#{id}
+	      ]]>
+    </select>
+      
+    <select id="isRegistedUser" resultType="user">
+   	 	<![CDATA[
+    		SELECT ID FROM USER WHERE ID=#{id}
+   	 	]]>
+  	</select>
+  	
+  	<select id="getUser" resultType="user">
+  		<![CDATA[
+    		SELECT * FROM USER WHERE ID=#{id}
+   	 	]]>
+  	</select> 
+  	
+  	<insert id="registerUser" parameterType="user">
+		<![CDATA[
+			INSERT INTO USER (ID, PASSWORD, UNAME, GENDER, BIRTH, EMAIL, PHONE, UZCODE, UADDRESS, ROLE, FNAME, FNUM, FADDRESS, FZCODE) VALUES
+			(#{id}, #{password}, #{uname}, #{gender}, #{birth}, #{email}, #{phone}, #{uzcode}, #{uaddress}, #{role}, #{fname}, #{fnum}, #{faddress}, #{fzcode}) 
+   	 	]]>
+	</insert>
+  	
+  	<update id="updateUser">
+  		<![CDATA[
+    		UPDATE USER SET UNAME=#{uname}, EMAIL=#{email}, PHONE=#{phone}, UZCODE=#{uzcode}, UADDRESS=#{uaddress}
+    		WHERE ID=#{id}
+   	 	]]>
+  	</update>
+  	
+  	<update id="updatePassword">
+  		<![CDATA[
+    		UPDATE USER SET PASSWORD=#{password} WHERE ID=#{id}
+   	 	]]>
+  	</update>
+  	
+  	<delete id="dropUser">
+  		<![CDATA[
+  			DELETE FROM USER WHERE ID=#{id}
+   	 	]]>
+  	</delete>
+	
+	<!-- Social -->
+	<select id="userInfoCheckForSocial" resultType="user">
+		<![CDATA[
+			SELECT ID FROM USER WHERE UNAME=#{uname} and BIRTH=#{birth} and GENDER=#{gender}
+   	 	]]>
+	</select>
+	
+	<insert id="insertSocialInfo" parameterType="social">
+		<![CDATA[
+    		INSERT INTO SNS_INFO VALUES(#{id},#{sns_id},#{sns_type},#{sns_name}, now())
+   	 	]]>
+	</insert>
+	
+	<select id="SocialLogin" resultType="social" parameterType="social">
+   	 	<![CDATA[
+   	 		SELECT ID, SNS_NAME, ROLE FROM SNS_INFO JOIN USER USING(ID) WHERE SNS_ID=#{sns_id}
+   	 	]]>
+  	</select>
+  	<select id="naverSocialConnCheck" resultType="social">
+   	 	<![CDATA[
+   	 		SELECT ID, SNS_NAME FROM SNS_INFO WHERE ID=#{id} AND SNS_TYPE='naver'
+   	 	]]>
+  	</select>
+  	<select id="kakaoSocialConnCheck" resultType="social">
+   	 	<![CDATA[
+   	 		SELECT ID, SNS_NAME FROM SNS_INFO WHERE ID=#{id} AND SNS_TYPE='kakao';
+   	 	]]>
+  	</select>
+  	
+  	<select id="kakaoUserId" resultType="social" parameterType="social">
+  		<![CDATA[
+   	 		SELECT SNS_ID, SNS_TYPE FROM SNS_INFO WHERE SNS_NAME=#{sns_name} AND SNS_TYPE='kakao';
+   	 	]]>
+  	</select>
+  	
+  	<delete id="dropSocialUser">
+  		<![CDATA[
+  			DELETE FROM SNS_INFO WHERE ID=#{id}
+   	 	]]>
+  	</delete>
+  	
+  	<!-- ID/PW -->
+  	<select id="findId" resultType="user">
+  		<![CDATA[
+   	 		SELECT ID, UNAME, EMAIL FROM USER WHERE UNAME=#{uname} AND EMAIL=#{email} AND ID NOT LIKE '%@%'
+   	 	]]>
+  	</select>
+  	
+  	<select id="findPw" resultType="user">
+  		<![CDATA[
+   	 		SELECT ID, UNAME, EMAIL FROM USER WHERE UNAME=#{uname} AND ID=#{id} AND EMAIL=#{email}
+   	 	]]>
+  	</select>
+  	
+  	<update id="updateUserCode">
+  		<![CDATA[
+    		UPDATE USER SET USERCODE=#{usercode} WHERE UNAME=#{uname} AND ID=#{id} AND EMAIL=#{email}
+   	 	]]>
+  	</update>
+  	
+  	<select id="hasUserCode" resultType="user">
+  		<![CDATA[
+    		SELECT ID, PASSWORD, UNAME, EMAIL FROM USER WHERE USERCODE=#{usercode}
+   	 	]]>
+  	</select>
+  	
+  	<update id="resetPw">
+  		<![CDATA[
+    		UPDATE USER SET PASSWORD=#{password} WHERE ID=#{id}
+   	 	]]>
+  	</update>
+  	
+  	<update id="deleteUserCode">
+  		<![CDATA[
+    		UPDATE USER SET USERCODE=null WHERE ID=#{id}
+   	 	]]>
+  	</update>
+  	
+  	  	<!-- product 테이블 업데이트 -->
+<update id="updateProduct">
+    UPDATE product 
+    SET PDELCHECK = '1'
+    WHERE ID IS NULL
+</update>
+
+<!-- reserve 테이블 업데이트 -->
+<update id="updateReserve">
+    UPDATE reserve 
+    SET RDELCHECK = '1'
+    WHERE ID IS NULL
+</update>
+
+<!-- pay 테이블 업데이트 -->
+<update id="updatePay">
+    UPDATE pay 
+    SET PAYDELCHECK = '1'
+    WHERE ID IS NULL
+</update>
+  	
+</mapper>

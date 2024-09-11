@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ReserveDAO">
+  <resultMap type="reserve" id="reserveResult">
+    <id column="RCODE" property="rcode"/>
+    <result column="PCODE" property="pcode"/>
+    <result column="ID" property="id"/>
+    <result column="RPRICE" property="rprice"/>
+    <result column="PCOUNT" property="pcount"/>
+    <result column="UNAME" property="uname"/>
+    <result column="PNAME" property="pname"/>
+    <result column="PHONE" property="phone"/>
+    <result column="UADDRESS" property="uaddress"/>
+    <result column="UZCODE" property="uzcode"/>
+    <result column="FNAME" property="fname"/>
+    <result column="RSTATE" property="rstate"/>
+    <result column="PIMG" property="pimg"/>
+    <result column="RDELCHECK" property="rdelcheck"/>
+  </resultMap>
+  
+  <select id="getMyReserveList" resultMap="reserveResult">
+    SELECT r.*, p.PRICE, p.PIMG, p.FNAME
+    FROM RESERVE r 
+    JOIN PRODUCT p ON r.PCODE = p.PCODE 
+    WHERE r.ID = #{id} AND RDELCHECK = '0'
+    ORDER BY RCODE DESC
+    LIMIT #{offset}, #{pageSize}
+</select>
+
+<select id="getTotalCount" resultType="int">
+        <![CDATA[
+        SELECT COUNT(RCODE) FROM RESERVE WHERE ID = #{id} AND RDELCHECK = '0'
+        ]]>
+    </select>
+  
+  <update id="modifyCount">
+  	<![CDATA[
+      UPDATE RESERVE SET PCOUNT=#{pcount}, RPRICE=#{rprice} where RCODE=#{rcode} AND ID = #{id} AND RDELCHECK = '0'
+      ]]>
+  	
+  </update>
+
+  <update id="deleteReserve">
+    <![CDATA[
+        UPDATE RESERVE 
+        SET RDELCHECK = '1' 
+        WHERE RCODE = #{rcode} AND ID = #{id}
+    ]]>
+  </update>
+  
+  <insert id="insertReserve" parameterType="reserve">
+<![CDATA[
+    INSERT INTO RESERVE (PCODE, ID, UNAME, PHONE, PNAME, UADDRESS, UZCODE, FNAME, RPRICE, PCOUNT, PIMG)
+    SELECT 
+        p.PCODE,
+        u.ID,
+        u.UNAME,
+        u.PHONE,
+        p.PNAME,
+        u.UADDRESS,
+        u.UZCODE,
+        p.FNAME,
+        p.PRICE * #{pcount},
+        #{pcount},
+        p.PIMG
+    FROM 
+        product p,
+        user u
+    WHERE 
+        p.PCODE = #{pcode}
+        AND u.ID = #{id}
+]]>
+</insert>
+
+<select id="isProductInCart" parameterType="reserve" resultType="Integer">
+        SELECT COUNT(*)
+        FROM reserve
+        WHERE PCODE = #{pcode} AND ID = #{id} AND RDELCHECK = '0'
+    </select>
+    
+    <select id="getRcode" parameterType="reserve" resultType="Integer">
+        SELECT rcode
+		FROM reserve
+		WHERE pcode = #{pcode} AND id = #{id}
+		ORDER BY rcode DESC
+		LIMIT 1;
+    </select>
+    
+    <update id="rstateUpdateReserve">
+  	<![CDATA[
+      UPDATE RESERVE SET RSTATE = '결제완료' where RCODE=#{rcode} AND ID = #{id}
+      ]]>
+  	
+  </update>
+    
+    
+    <select id="getAdminReserveList" resultType="reserve">
+		SELECT r.*, p.PRICE , p.PIMG
+		FROM RESERVE r
+		JOIN PRODUCT p ON r.PCODE = p.PCODE
+		WHERE NOT (r.rstate = '결제전' AND r.rdelcheck = '1')
+		<if test="listSearchCondition=='PCODE'">
+			AND r.PCODE LIKE concat('%', #{listSearchKeyword}, '%')
+		</if>
+		<if test="listSearchCondition=='PNAME'">
+			AND r.PNAME LIKE concat('%', #{listSearchKeyword}, '%')
+		</if>
+		<if test="listSearchCondition=='ID'">
+			AND r.ID LIKE concat('%', #{listSearchKeyword}, '%')
+		</if>
+		<if test="listSearchCondition=='UNAME'">
+			AND r.UNAME LIKE concat('%', #{listSearchKeyword}, '%')
+		</if>
+		ORDER BY (r.rstate = '결제전') desc, r.rcode desc LIMIT #{limit} offset #{offset}
+	</select>
+
+	<select id="listCount" resultType="int">
+		SELECT count(*) from reserve
+		WHERE rdelcheck = '0'
+		<if test="listSearchCondition=='PCODE'">
+			AND PCODE LIKE concat('%', #{listSearchKeyword}, '%')
+		</if>
+		<if test="listSearchCondition=='PNAME'">
+			AND PNAME LIKE concat('%', #{listSearchKeyword}, '%')
+		</if>
+		<if test="listSearchCondition=='ID'">
+			AND ID LIKE concat('%', #{listSearchKeyword}, '%')
+		</if>
+		<if test="listSearchCondition=='UNAME'">
+			AND UNAME LIKE concat('%', #{listSearchKeyword}, '%')
+		</if>
+	</select>
+
+
+	<update id="adminModifyCount">
+  		<![CDATA[
+      	UPDATE RESERVE SET PCOUNT=#{pcount}, RPRICE=#{rprice} where RCODE=#{rcode}
+      	]]>
+	</update>
+
+	<select id="getAdminReserveDetail" parameterType="int"
+		resultType="reserve">
+		<![CDATA[
+		SELECT r.*, p.PRICE , p.PIMG
+        FROM RESERVE r 
+        JOIN PRODUCT p ON r.PCODE = p.PCODE WHERE RCODE=#{rcode}
+		]]>
+	</select>
+
+	<insert id="reserveInsert" parameterType="reserve">
+		<![CDATA[
+		INSERT INTO RESERVE(PCODE, ID, RPRICE, PCOUNT, UNAME, PNAME, PHONE, UADDRESS, UZCODE, FNAME, PIMG) VALUES(#{pcode}, #{id}, #{rprice}, #{pcount}, #{uname}, #{pname}, #{phone}, #{uaddress}, #{uzcode}, #{fname}, #{pimg})
+		]]>
+	</insert>
+
+	<update id="getAdminReserveDelete" parameterType="reserve">
+		<![CDATA[
+		UPDATE RESERVE SET rdelcheck='1' WHERE RCODE=#{rcode}
+		]]>
+	</update>
+
+
+	<select id="getProductList" resultType="product">
+		SELECT * FROM product
+	</select>
+
+	<select id="productListCount" resultType="int">
+		SELECT count(*) from product
+		WHERE 1 = 1
+		<if test="searchCondition=='PCODE'">
+			AND PCODE LIKE concat('%', #{searchKeyword}, '%')
+		</if>
+		<if test="searchCondition=='PNAME'">
+			AND PNAME LIKE concat('%', #{searchKeyword}, '%')
+		</if>
+	</select>
+
+	<select id="getUserList" resultType="user">
+
+		SELECT * FROM user WHERE 1 = 1
+		<if test="userSearchCondition == 'ID'">
+			AND ID LIKE CONCAT('%', #{userSearchKeyword}, '%')
+		</if>
+		<if test="userSearchCondition == 'UNAME'">
+			AND UNAME LIKE CONCAT('%', #{userSearchKeyword}, '%')
+		</if>
+		order by regdate desc;
+
+	</select>
+	
+	<update id="updateCountReserve">
+    <![CDATA[
+    UPDATE RESERVE
+    SET PCOUNT = PCOUNT + #{pcount}
+    WHERE PCODE = #{pcode} AND ID = #{id} AND RDELCHECK = '0' AND RSTATE = '결제전'
+    ]]>
+</update>
+</mapper>

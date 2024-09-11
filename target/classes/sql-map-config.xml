@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+<typeAliases>
+	<typeAlias alias="user" type="com.spring.farmily.user.model.UserVO" />
+	<typeAlias alias="social" type="com.spring.farmily.user.model.SocialVO"/>
+	<typeAlias alias="product" type="com.spring.farmily.product.model.ProductVO"/>
+	<typeAlias alias="reserve" type="com.spring.farmily.reserve.model.ReserveVO"/>
+	<typeAlias alias="order" type="com.spring.farmily.order.model.OrderProductVO"/>
+	<typeAlias alias="pay" type="com.spring.farmily.pay.model.PayVO"/>
+	<typeAlias alias="qna" type="com.spring.farmily.qna.model.QnaVO"/>
+</typeAliases>
+
+
+  <mappers>
+    <mapper resource="mapper/UserSQL.xml"/>
+    <mapper resource="mapper/userFarmSQL.xml"/>
+    <mapper resource="mapper/AUserSQL.xml"/>
+    <mapper resource="mapper/productSql.xml"/>
+    <mapper resource="mapper/reserveSql.xml"/>
+    <mapper resource="mapper/orderSql.xml"/>
+    <mapper resource="mapper/paySql.xml"/>
+     <mapper resource="mapper/qnaSql.xml"/>
+    <mapper resource="mapper/chartSql.xml"/>
+    <mapper resource="mapper/FarmPaySql.xml"/>
+    <mapper resource="mapper/APaySQL.xml"/>
+  </mappers>
+</configuration>

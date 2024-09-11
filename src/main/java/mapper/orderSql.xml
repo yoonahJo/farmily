@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="OrderDAO">
+  <resultMap type="order" id="orderResult">
+     <id column="PCODE" property="pcode"/>
+     <result column="ID" property="id"/>
+     <result column="PCOUNT" property="pcount"/>
+     <result column="PNAME" property="pname"/>
+     <result column="PRICE" property="price"/>
+     <result column="PIMG" property="pimg"/>
+     <result column="FNAME" property="fname"/>
+     <result column="RCODE" property="rcode"/>
+     <result column="RDELCHECK" property="rdelcheck"/>
+  </resultMap>
+
+  <select id="getOrderInfo" resultMap="orderResult">
+    SELECT PCODE, PNAME, PRICE, PCOUNT, PIMG, FNAME FROM PRODUCT WHERE PCODE = #{pcode}
+  </select>
+  
+  <select id="getRcodeInfo" resultMap="orderResult">
+    SELECT RCODE FROM RESERVE WHERE RCODE = #{rcode} AND RDELCHECK = '0';
+  </select>
+  
+</mapper>

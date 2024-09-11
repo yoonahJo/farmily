@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="qnaDao">
+
+    <resultMap type="qna" id="qnaResult">
+        <id column="QCODE" property="qcode"/>
+        <result column="ID" property="id"/>
+        <result column="TITLE" property="title"/>
+        <result column="CONTENT" property="content"/>
+        <result column="POSTDATE" property="postdate"/>
+        <result column="RCONTENT" property="rcontent"/>
+        <result column="RPOSTDATE" property="rpostdate"/>
+        <result column="STATUS" property="status"/>
+        <result column="RATING" property="rating"/>
+        <result column="IMAGE" property="image" />
+
+    </resultMap>
+
+    <select id="getQnaList" resultMap="qnaResult">
+    SELECT * FROM QNA
+    WHERE 1=1
+    <if test="searchKeyword != null and searchKeyword != ''">
+        <if test="searchCondition == 'title'">
+            AND title LIKE CONCAT('%', #{searchKeyword}, '%')
+        </if>
+        <if test="searchCondition == 'content'">
+            AND content LIKE CONCAT('%', #{searchKeyword}, '%')
+        </if>
+        <if test="searchCondition == 'id'">
+            AND id LIKE CONCAT('%', #{searchKeyword}, '%')
+        </if>
+    </if>
+    ORDER BY POSTDATE DESC
+    LIMIT #{limit} OFFSET #{offset}
+    
+</select>
+
+    
+    <select id="getMyQnaList" resultType="qna">
+    SELECT * FROM QNA
+    WHERE ID = #{id} 
+   
+</select>
+
+<select id="getQnaByCode" parameterType="int" resultMap="qnaResult">
+    SELECT * FROM QNA WHERE QCODE = #{qcode}
+</select>
+
+<insert id="insertQna" parameterType="qna">
+    INSERT INTO qna (id, title, content, image, status, postdate)
+    VALUES (#{id}, #{title}, #{content}, #{image}, '미답변', NOW())
+</insert>
+    
+    
+    <update id="updateQnaReply" parameterType="qna">
+    UPDATE QNA
+    SET RCONTENT = #{rcontent}, RPOSTDATE = NOW(), STATUS = '답변완료'
+    WHERE QCODE = #{qcode}
+</update>
+   
+   <update id="deleteReply">
+    UPDATE qna
+    SET rcontent = NULL, rpostdate = NULL, STATUS = '미답변', RATING= NULL
+    WHERE qcode = #{qcode}
+</update>
+<update id="updateRating" parameterType="com.spring.farmily.qna.model.QnaVO">
+    UPDATE qna
+    SET rating = #{rating}
+    WHERE qcode = #{qcode}
+</update>
+<select id="getQnaByPage" resultMap="qnaResult">
+    SELECT * 
+    FROM QNA
+    WHERE ID = #{id}
+    <if test="searchKeyword != null and searchKeyword != ''">
+        AND TITLE LIKE CONCAT('%', #{searchKeyword}, '%')
+    </if>
+    ORDER BY POSTDATE DESC
+    LIMIT #{limit} OFFSET #{offset}
+</select>
+
+<select id="getQnaCount" resultType="int">
+    SELECT COUNT(*)
+    FROM QNA
+    WHERE ID = #{id}
+    <if test="searchKeyword != null and searchKeyword != ''">
+        AND TITLE LIKE CONCAT('%', #{searchKeyword}, '%')
+    </if>
+</select>
+<select id="getAllQnaCount" resultType="int">
+	SELECT COUNT(*)
+    FROM QNA
+    WHERE 1=1
+      <if test="searchKeyword != null and searchKeyword != ''">
+            <if test="searchCondition == 'title'">
+                AND title LIKE CONCAT('%', #{searchKeyword}, '%')
+            </if>
+            <if test="searchCondition == 'content'">
+                AND content LIKE CONCAT('%', #{searchKeyword}, '%')
+            </if>
+            <if test="searchCondition == 'id'">
+                AND id LIKE CONCAT('%', #{searchKeyword}, '%')
+            </if>
+        </if>
+    </select>
+<delete id="deleteQna" parameterType="int">
+    DELETE FROM QNA
+    WHERE qcode = #{qcode}
+</delete>
+   <!-- Q&A 수정 -->
+    <update id="updateQna" parameterType="qna">
+        UPDATE QNA
+        SET TITLE = #{title}, CONTENT = #{content}, IMAGE = #{image}
+        WHERE QCODE = #{qcode}
+    </update>
+
+</mapper>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="farmPayDao">
+
+ <select id="getFnumByUserId" parameterType="string" resultType="string">
+        SELECT FNUM FROM USER WHERE ID = #{userId}
+    </select>
+
+
+
+    <select id="getFarmPayListByPage" parameterType="com.spring.farmily.pay.model.PayVO" resultType="com.spring.farmily.pay.model.PayVO">
+        SELECT PAY.PAYCODE, PAY.ID, PAY.CODE, PAY.NAME, PAY.AMOUNT, PAY.QUANTITY, PAY.DSTATE, PAY.BAESONGDATE, PAY.RSTATE
+        FROM PAY
+        JOIN PRODUCT ON PAY.CODE = PRODUCT.PCODE
+        WHERE PRODUCT.FNUM = #{fnum}
+        <choose>
+            <when test="searchCondition == 'name'">
+                AND PAY.NAME LIKE CONCAT('%', #{searchKeyword}, '%')
+            </when>
+            <when test="searchCondition == 'id'">
+                AND PAY.ID LIKE CONCAT('%', #{searchKeyword}, '%')
+            </when>
+            <when test="searchCondition == 'code'">
+                AND PAY.CODE LIKE CONCAT('%', #{searchKeyword}, '%')
+            </when>
+        </choose>
+        ORDER BY PAY.PAYDATE DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 결제 내역 총 수 카운트 -->
+    <select id="getPayListCount" parameterType="com.spring.farmily.pay.model.PayVO" resultType="int">
+        SELECT COUNT(*)
+        FROM PAY
+        JOIN PRODUCT ON PAY.CODE = PRODUCT.PCODE
+        WHERE PRODUCT.FNUM = #{fnum}
+        <choose>
+            <when test="searchCondition == 'name'">
+                AND PAY.NAME LIKE CONCAT('%', #{searchKeyword}, '%')
+            </when>
+            <when test="searchCondition == 'id'">
+                AND PAY.ID LIKE CONCAT('%', #{searchKeyword}, '%')
+            </when>
+            <when test="searchCondition == 'code'">
+                AND PAY.CODE LIKE CONCAT('%', #{searchKeyword}, '%')
+            </when>
+        </choose>
+    </select>
+
+    <!-- 배송 상태 업데이트 -->
+    <update id="updateDeliveryState" parameterType="map">
+    UPDATE PAY
+    SET DSTATE = #{newDstate},
+        BAESONGDATE = CASE
+                        WHEN #{newDstate} = '배송중' THEN NOW()
+                        ELSE BAESONGDATE
+                      END
+    WHERE PAYCODE = #{paycode}
+</update>
+<select id="getPayDetailByPaycode" parameterType="string" resultType="com.spring.farmily.pay.model.PayVO">
+    SELECT 
+        PAY.PAYCODE, 
+        PAY.ID, 
+        PAY.CODE, 
+        PAY.RCODE, 
+        PAY.IMP_UID, 
+        PAY.MERCHANT_UID, 
+        PAY.NAME, 
+        PAY.AMOUNT, 
+        PAY.QUANTITY, 
+        PAY.BUYER_NAME, 
+        PAY.BUYER_EMAIL, 
+        PAY.BUYER_TEL, 
+        PAY.BUYER_ADDR, 
+        PAY.BUYER_POSTCODE, 
+        PAY.PAYDATE, 
+        PAY.DSTATE, 
+        PAY.RSTATE, 
+        PAY.PAY_METHOD, 
+        PAY.FNUM, 
+        PAY.UNITPRICE, 
+        PAY.BAESONGDATE,
+        PRODUCT.PIMG
+    FROM PAY
+    JOIN PRODUCT ON PAY.CODE = PRODUCT.PCODE
+    WHERE PAY.PAYCODE = #{paycode}
+</select>
+  <select id="countByDstate" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM PAY
+        JOIN PRODUCT ON PAY.CODE = PRODUCT.PCODE
+        WHERE PRODUCT.FNUM = #{fnum} AND PAY.DSTATE = #{dstate}
+    </select>
+</mapper>

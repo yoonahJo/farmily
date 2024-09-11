@@ -1,0 +1,25 @@
+@charset "UTF-8";
+.custom-header-font {
+ font-family: Vivaldi,"Playwrite CU", cursive;
+  font-size: 50px;
+  font-style: normal;
+}
+
+	.custom-header {
+		height: auto;
+		min-height: 120px;
+	}
+
+	.navbar-collapse {
+		overflow: visible;
+	}
+	
+	.navbar-collapse {
+    transition: height 0.5s ease, transform 0.3s ease;
+}
+
+.navbar-collapse.collapsing {
+    height: 0;
+    overflow: hidden;
+    transition: height 0.5s ease, transform 0.3s ease;
+}

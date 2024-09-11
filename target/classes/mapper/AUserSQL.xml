@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace="AUserDAO">
+    <resultMap type="user" id="userResult">
+        <id property="id" column="id" />
+        <result property="password" column="password" />
+        <result property="uname" column="uname" />
+        <result property="birth" column="birth" />
+        <result property="email" column="email" />
+        <result property="phone" column="phone" />
+        <result property="uaddress" column="uaddress" />
+        <result property="uzcode" column="uzcode" />
+        <result property="role" column="role" jdbcType="CHAR" /> <!-- char 자료형 지정 -->
+        <result property="regdate" column="regdate" />
+        <result property="gender" column="gender" jdbcType="CHAR" />
+        <result property="fname" column="fname" />
+        <result property="fnum" column="fnum" />
+        <result property="faddress" column="faddress" />
+        <result property="fzcode" column="fzcode" />
+    </resultMap>
+    
+    
+     <select id="selectAdminUserByIdAndPassword" parameterType="user" resultType="user">
+    <![CDATA[
+       SELECT ID, ROLE, PASSWORD FROM USER WHERE ID=#{id}
+        ]]>
+</select>
+
+
+   <insert id="AaddUser" parameterType="user">
+		  <![CDATA[
+		  insert into user (
+		    id, password, uname, birth, email, phone, uaddress, uzcode, role, regdate, gender,
+		    fname, fnum, faddress, fzcode
+		  ) values (
+		    #{id}, #{password}, #{uname}, #{birth}, #{email}, #{phone}, #{uaddress}, #{uzcode}, #{role}, curdate(), #{gender},
+		    #{fname}, #{fnum}, #{faddress}, #{fzcode}
+		  )
+		  ]]>
+		</insert>
+
+    <select id="AcheckIdExists" parameterType="String" resultType="int">
+         <![CDATA[
+        select count(*) 
+        from user 
+        where id = #{id}
+        ]]>
+    </select>
+
+    <update id="AeditUser">
+        <![CDATA[
+        UPDATE user
+        SET
+            uname = #{uname},
+            role = #{role},
+            phone = #{phone},
+            regdate = #{regdate},
+            email = #{email},
+            birth = #{birth},
+            gender = #{gender},
+            uzcode = #{uzcode},
+            uaddress = #{uaddress},
+            fname = COALESCE(#{fname}, ''),
+            fnum = COALESCE(#{fnum}, ''),
+            fzcode = COALESCE(#{fzcode}, ''),
+            faddress = COALESCE(#{faddress}, '')
+        WHERE id = #{id}
+        ]]>
+    </update>
+
+
+    <delete id="AdeleteUser">
+        <![CDATA[
+        delete from user where id=#{id}
+        ]]>
+    </delete>
+    
+    <select id="AgetUser" resultType="user">
+    <![CDATA[
+    select * from user
+    where id = #{id}
+    and password = #{password}
+    ]]>
+    </select>
+
+    <select id="AgetViewUser" parameterType="user" resultType="user">
+	    <![CDATA[
+	    SELECT * FROM user
+	    WHERE id = #{id}
+	    ]]>
+	</select>
+
+    <select id="AgetUserList" resultMap="userResult">
+    <![CDATA[
+	    select * from user
+	    where role <> 'A'
+	    order by regdate desc
+	    ]]>
+	</select>
+    <select id="getUsersByPage" parameterType="map" resultMap="userResult">
+        <![CDATA[
+        SELECT * FROM user
+        ORDER BY id DESC
+        LIMIT #{start}, #{limit}
+        ]]>
+    </select>
+
+    <select id="getAllUserCount" resultType="int">
+        <![CDATA[
+        SELECT COUNT(*) FROM user
+        ]]>
+    </select>
+
+</mapper>

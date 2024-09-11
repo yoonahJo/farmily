@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace="APayDao">
+    <resultMap id="payResult" type="com.spring.farmily.pay.model.PayVO">
+        <id column="PAYCODE" property="paycode"/>
+        <result column="ID" property="id"/>
+        <result column="CODE" property="code"/>
+        <result column="RCODE" property="rcode"/>
+        <result column="IMP_UID" property="imp_uid"/>
+        <result column="MERCHANT_UID" property="merchant_uid"/>
+        <result column="NAME" property="name"/>
+        <result column="AMOUNT" property="amount"/>
+        <result column="QUANTITY" property="quantity"/>
+        <result column="BUYER_NAME" property="buyer_name"/>
+        <result column="BUYER_EMAIL" property="buyer_email"/>
+        <result column="BUYER_TEL" property="buyer_tel"/>
+        <result column="BUYER_ADDR" property="buyer_addr"/>
+        <result column="BUYER_POSTCODE" property="buyer_postcode"/>
+        <result column="PAYDATE" property="paydate"/>
+        <result column="DSTATE" property="dstate"/>
+        <result column="RSTATE" property="rstate"/>
+        <result column="PAY_METHOD" property="pay_method"/>
+        <result column="FNUM" property="fnum"/>
+        <result column="PDELCHECK" property="pdelcheck"/>
+        <result column="UNITPRICE" property="unitPrice"/>
+        <result column="FNAME" property="fname"/>
+    </resultMap>
+
+<select id="getPayList" parameterType="map" resultMap="payResult">
+        SELECT DISTINCT p.*, pr.FNAME AS FNAME
+        FROM PAY p
+        LEFT JOIN PRODUCT pr ON p.FNUM = pr.FNUM
+        <where>
+            <if test="searchType == 'paycode' and searchField != null and searchField != ''">
+                AND p.PAYCODE LIKE CONCAT('%', #{searchField}, '%')
+            </if>
+            <if test="searchType == 'id' and searchField != null and searchField != ''">
+                AND p.ID LIKE CONCAT('%', #{searchField}, '%')
+            </if>
+            <if test="searchType == 'fname' and searchField != null and searchField != ''">
+                AND pr.FNAME LIKE CONCAT('%', #{searchField}, '%')
+            </if>
+        </where>
+        ORDER BY p.PAYCODE DESC
+        LIMIT #{offset}, #{limit};
+    </select>
+    
+<select id="getTotalCount" parameterType="map" resultType="int">
+   SELECT COUNT(DISTINCT p.PAYCODE) 
+   FROM PAY p
+   LEFT JOIN PRODUCT pr ON p.FNUM = pr.FNUM
+   <where>
+       <if test="searchType == 'paycode' and searchField != null and searchField != ''">
+           AND p.PAYCODE LIKE CONCAT('%', #{searchField}, '%')
+       </if>
+       <if test="searchType == 'id' and searchField != null and searchField != ''">
+           AND p.ID LIKE CONCAT('%', #{searchField}, '%')
+       </if>
+       <if test="searchType == 'fname' and searchField != null and searchField != ''">
+           AND pr.FNAME LIKE CONCAT('%', #{searchField}, '%')
+       </if>
+   </where>
+</select>
+
+
+    
+<select id="getPayDetail" resultMap="payResult">
+        SELECT DISTINCT p.*, pr.FNAME AS FNAME
+        FROM PAY p
+        LEFT JOIN PRODUCT pr ON p.FNUM = pr.FNUM
+        WHERE p.PAYCODE = #{paycode};
+    </select>
+
+</mapper>

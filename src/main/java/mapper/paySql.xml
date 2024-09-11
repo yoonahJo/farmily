@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PayDAO">
+	<resultMap id="payResult" type="pay">
+		<id column="PAYCODE" property="paycode" /> <!-- 기본 키 PAYCODE -->
+		<result column="ID" property="id" />
+		<result column="CODE" property="code" />
+		<result column="RCODE" property="rcode" />
+		<result column="IMP_UID" property="imp_uid" />
+		<result column="MERCHANT_UID" property="merchant_uid" />
+		<result column="NAME" property="name" />
+		<result column="AMOUNT" property="amount" />
+		<result column="QUANTITY" property="quantity" />
+		<result column="BUYER_NAME" property="buyer_name" />
+		<result column="BUYER_EMAIL" property="buyer_email" />
+		<result column="BUYER_TEL" property="buyer_tel" />
+		<result column="BUYER_ADDR" property="buyer_addr" />
+		<result column="BUYER_POSTCODE" property="buyer_postcode" />
+		<result column="PAYDATE" property="paydate" />
+		<result column="PAY_METHOD" property="pay_method" /> <!-- 추가된 컬럼 -->
+		<result column="UNITPRICE" property="unitPrice" />
+		<result column="BAESONGDATE" property="baesongdate"/>
+		<result column="PAYDELCHECK" property="paydelcheck" />
+	</resultMap>
+
+	<insert id="insertPay" parameterType="pay">
+		INSERT INTO PAY (
+		ID, CODE,
+		RCODE, IMP_UID, MERCHANT_UID, NAME, AMOUNT, QUANTITY,
+		BUYER_NAME,
+		BUYER_EMAIL, BUYER_TEL, BUYER_ADDR, BUYER_POSTCODE,
+		PAY_METHOD, FNUM,
+		UNITPRICE
+		)
+		SELECT
+		#{id},
+		#{code},
+		#{rcode},
+		#{imp_uid},
+		#{merchant_uid},
+		#{name},
+		#{amount},
+		#{quantity},
+		#{buyer_name},
+		#{buyer_email},
+		#{buyer_tel},
+		#{buyer_addr},
+		#{buyer_postcode},
+		#{pay_method},
+		p.FNUM,
+		#{unitPrice}
+		FROM
+		product p
+		WHERE
+		p.PCODE = #{code};
+	</insert>
+
+	<select id="getMyPayList" resultType="pay">
+		SELECT PAY.PAYCODE, PAY.CODE, PAY.ID, PAY.MERCHANT_UID, PAY.NAME,
+		PAY.AMOUNT, PAY.UNITPRICE, PAY.QUANTITY, PAY.PAYDATE, PAY.DSTATE,
+		PAY.RSTATE, PAY.PAYDELCHECK, PRODUCT.PIMG
+		FROM PAY
+		JOIN PRODUCT ON
+		PAY.CODE = PRODUCT.PCODE
+		WHERE PAY.MERCHANT_UID IN (
+		SELECT DISTINCT
+		PAY.MERCHANT_UID
+		FROM PAY
+		WHERE PAY.ID = #{id} AND PAY.PAYDELCHECK = '0'
+		<if
+			test="paySearchKeyword != null and paySearchKeyword.trim() != ''">
+			AND PAY.NAME LIKE CONCAT('%', #{paySearchKeyword}, '%')
+		</if>
+		) ORDER BY PAY.PAYDATE DESC LIMIT #{limit} offset #{offset}
+	</select>
+
+	<select id="listCount" resultType="int">
+		SELECT COUNT(*)
+		FROM pay
+		WHERE ID = #{id} AND PAYDELCHECK = '0'
+		<if
+			test="paySearchKeyword != null and paySearchKeyword.trim() != ''">
+			AND MERCHANT_UID IN (
+			SELECT DISTINCT MERCHANT_UID
+			FROM pay
+			WHERE PAYDELCHECK = '0'
+			AND NAME LIKE CONCAT('%', #{paySearchKeyword}, '%')
+			)
+		</if>
+	</select>
+
+	<update id="getPayDelete" parameterType="pay">
+		<![CDATA[
+		UPDATE PAY SET paydelcheck='1' WHERE MERCHANT_UID=#{merchant_uid}
+		]]>
+	</update>
+
+	<select id="getPageItemCount" resultType="int">
+		SELECT COUNT(*)
+		FROM pay
+		WHERE ID = #{id} AND PAYDELCHECK = '0'
+		<if test="paySearchKeyword != null and paySearchKeyword.trim() != ''">
+			AND NAME LIKE CONCAT('%', #{paySearchKeyword}, '%')
+		</if>
+	</select>
+	
+
+
+
+	<select id="getMyPayListDetail" resultMap="payResult">
+		SELECT * FROM PAY WHERE ID = #{id} AND MERCHANT_UID = #{merchant_uid} ORDER BY PAYDATE DESC
+	</select>
+
+	<select id="getMyPayListByMerchantUid" resultMap="payResult">
+		SELECT * FROM PAY WHERE ID = #{id} AND MERCHANT_UID = #{merchant_uid}
+	</select>
+	
+	<select id="getOrderStates" resultType="map">
+		SELECT PAY.MERCHANT_UID,
+		CASE
+		WHEN SUM(CASE WHEN PAY.DSTATE = '배송준비중' THEN 1 ELSE 0 END) > 0 THEN '배송준비중'
+		WHEN SUM(CASE WHEN PAY.DSTATE = '배송중' THEN 1 ELSE 0 END) > 0 THEN
+		'배송중'
+		WHEN SUM(CASE WHEN PAY.DSTATE = '배송완료' THEN 1 ELSE 0 END) =
+		COUNT(PAY.DSTATE) THEN '배송완료'
+		ELSE '기타'
+		END AS STATUS
+		FROM PAY
+		WHERE PAY.ID = #{id}
+		GROUP BY PAY.MERCHANT_UID
+	</select>
+	
+	  
+	<update id="updateDelivery" parameterType="int">
+    UPDATE PAY
+    SET DSTATE = '배송완료'
+    WHERE PAYCODE = #{paycode} AND DSTATE = '배송중'
+	</update>
+	
+
+</mapper>

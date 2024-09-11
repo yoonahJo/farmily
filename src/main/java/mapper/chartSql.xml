@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="chartDao">
+
+    <!-- 이번 달 회원가입 -->
+    <select id="getMonthlyUserStats" resultType="map">
+        SELECT DAY(regdate) AS day, COUNT(*) AS userCount
+        FROM user
+        WHERE MONTH(regdate) = MONTH(CURRENT_DATE())
+          AND YEAR(regdate) = YEAR(CURRENT_DATE())
+        GROUP BY DAY(regdate)
+        ORDER BY day;
+    </select>
+    
+    <!--  예약상품 top5 -->
+    <select id="getPopularProudcts" resultType="map">
+    SELECT pname, COUNT(*) AS reserve_count
+	FROM reserve
+	GROUP BY pname
+	ORDER BY reserve_count DESC
+	LIMIT 5;
+    </select>
+    
+    <!-- 회원 남녀성비 -->
+    <select id="getGenderRatio" resultType="map">
+    select gender, count(*) as gender_count from user group by gender;
+    </select>
+    
+<!-- 연령 분포 -->
+<select id="getAgeGroup" resultType="map"> 
+    <![CDATA[
+    SELECT 
+        CASE
+            WHEN FLOOR(DATEDIFF(CURDATE(), STR_TO_DATE(BIRTH, '%Y%m%d')) / 365.25) <= 29 THEN '20대 이하'
+            WHEN FLOOR(DATEDIFF(CURDATE(), STR_TO_DATE(BIRTH, '%Y%m%d')) / 365.25) BETWEEN 30 AND 39 THEN '30대'
+            WHEN FLOOR(DATEDIFF(CURDATE(), STR_TO_DATE(BIRTH, '%Y%m%d')) / 365.25) BETWEEN 40 AND 49 THEN '40대'
+            WHEN FLOOR(DATEDIFF(CURDATE(), STR_TO_DATE(BIRTH, '%Y%m%d')) / 365.25) BETWEEN 50 AND 59 THEN '50대'
+            ELSE '60대 이상'
+        END AS age_group,
+        COUNT(*) AS count
+    FROM USER
+    GROUP BY age_group
+    ORDER BY age_group;
+    ]]>
+</select>
+
+
+	<!-- 매출 top5 연우씨-->
+	<select id="getHighSales" resultType="map"> 
+    <![CDATA[
+    select name,sum(unitprice) as 'sales' from pay
+    group by name
+    order by sum(unitprice) desc
+    limit 5;
+    ]]>
+	</select>
+	
+	<!-- 판매량 top5 연우씨-->
+	<select id="getHighAmount" resultType="map"> 
+    <![CDATA[
+    select name,quantity from pay
+    group by name
+    order by quantity desc
+    limit 5;
+    ]]>
+	</select>
+	
+	<!-- 농장별 결제건수 희도 -->
+	  <select id="fnamePaygunsu" resultType="map">
+  SELECT p.FNAME AS 농장명, COUNT(*) AS 결제건수
+  FROM pay py
+  JOIN product p ON py.CODE = p.PCODE 
+  GROUP BY p.FNAME;
+  </select> 
+
+	<!-- 농장별 매출액비교 희도 -->
+ <select id="fnamePayleebundalAmount" resultType="map">
+SELECT
+    p.FNAME AS 농장명,
+    SUM(py.AMOUNT) AS 매출액
+ FROM
+    pay py
+ JOIN
+    product p ON py.CODE = p.PCODE
+  <!-- WHERE
+  MONTH(py.PAYDATE) = MONTH(CURRENT_DATE())  
+    AND YEAR(py.PAYDATE) = YEAR(CURRENT_DATE())  -->
+ GROUP BY
+    p.FNAME;
+</select>
+
+<!-- 상품타입별 판매량 희도 -->
+<select id="ptypeleebundalpay" resultType="map">
+SELECT
+    p.ptype AS 상품타입,
+    SUM(py.QUANTITY) AS 판매량
+ FROM
+    pay py
+ JOIN
+    product p ON py.CODE = p.PCODE
+<!--   WHERE
+    MONTH(py.PAYDATE) = MONTH(CURRENT_DATE())  
+    AND YEAR(py.PAYDATE) = YEAR(CURRENT_DATE())  -->
+ GROUP BY
+    p.ptype;
+</select>
+<select id="numberOfUser" resultType="map">
+SELECT
+    FNAME AS 농장명,
+    COUNT(DISTINCT pay.id) AS 고객수
+ FROM
+    pay
+ JOIN
+    product ON pay.CODE = PCODE
+<!--   WHERE
+    MONTH(pay.PAYDATE) = MONTH(CURRENT_DATE())
+    AND YEAR(pay.PAYDATE) = YEAR(CURRENT_DATE())-->
+ GROUP BY
+    FNAME;
+</select>
+<select id="numberOfProudct" resultType="map">
+ SELECT 
+    FNAME AS 농장명, 
+    COUNT(DISTINCT PCODE) AS 상품종류수
+ FROM 
+    product
+ GROUP BY 
+    FNAME;
+</select>
+
+
+
+
+
+ <!-- userId로 fnum 조회 -->
+    <select id="getFnumByUserId" resultType="string">
+        SELECT FNUM
+        FROM USER
+        WHERE ID = #{userId}
+    </select>
+
+    <!-- 농부 매출 통계 -->
+    <select id="getMySales" resultType="map">
+        SELECT 
+            DATE_FORMAT(PAY.PAYDATE, '%Y-%m') AS month, 
+            SUM(PAY.AMOUNT) AS total_sales
+        FROM 
+            PAY
+        JOIN 
+            PRODUCT ON PAY.CODE = PRODUCT.PCODE
+        WHERE 
+            PRODUCT.FNUM = #{fnum}
+            AND PAY.RSTATE = '결제완료'
+        GROUP BY 
+            DATE_FORMAT(PAY.PAYDATE, '%Y-%m')
+        ORDER BY 
+            month ASC;
+    </select>
+    
+    <!-- 농무 일매출(한달?) -->
+    <select id="getMyDaySales" resultType="map">
+    	SELECT 
+    CAST(DATE_FORMAT(PAY.PAYDATE, '%d') AS UNSIGNED) AS day, 
+    CAST(SUM(PAY.AMOUNT) AS UNSIGNED) AS daily_sales
+	FROM 
+    PAY
+	JOIN 
+    PRODUCT ON PAY.CODE = PRODUCT.PCODE
+	WHERE 
+    PRODUCT.FNUM = #{fnum}
+    AND PAY.RSTATE = '결제완료'
+    AND DATE_FORMAT(PAY.PAYDATE, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
+	GROUP BY 
+    DATE_FORMAT(PAY.PAYDATE, '%d')
+	ORDER BY 
+    day ASC;
+    
+    </select>
+    
+    
+    
+
+    <!-- 상품 매출 순위 -->
+    <select id="getMyCashCow" resultType="map">
+        SELECT 
+            PRODUCT.PCODE AS product_code,
+            SUM(PAY.AMOUNT) AS total_sales
+        FROM 
+            PAY
+        JOIN 
+            PRODUCT ON PAY.CODE = PRODUCT.PCODE
+        WHERE 
+            PRODUCT.FNUM = #{fnum}
+            AND PAY.RSTATE = '결제완료'
+            AND YEAR(PAY.PAYDATE) = YEAR(CURDATE())
+        GROUP BY 
+            PRODUCT.PCODE
+        ORDER BY 
+            total_sales DESC
+        LIMIT 10;
+    </select>
+
+    <!-- 상품 판매량 순위 -->
+    <select id="getMyProductRanking" resultType="map">
+        SELECT 
+            PRODUCT.PCODE AS product_code,
+            SUM(PAY.QUANTITY) AS total_quantity
+        FROM 
+            PAY
+        JOIN 
+            PRODUCT ON PAY.CODE = PRODUCT.PCODE
+        WHERE 
+            PRODUCT.FNUM = #{fnum}
+            AND PAY.RSTATE = '결제완료'
+            AND YEAR(PAY.PAYDATE) = YEAR(CURDATE())
+        GROUP BY 
+            PRODUCT.PCODE
+        ORDER BY 
+            total_quantity DESC
+        LIMIT 10;
+    </select>
+    
+    <!-- 일별 상품 판매량 정현씨-->
+    <select id="dailyProductNum" resultType="map">
+		SELECT
+		date(paydate), name, SUM(quantity) AS quantity
+		FROM
+		pay
+		WHERE
+		fnum = #{fnum}
+		AND
+		date(paydate) = CURDATE()
+		GROUP BY
+		date(paydate), name
+		ORDER BY
+		name
+	</select>
+	
+	<select id="dailyUserNum" resultType="map">
+		SELECT
+		date(paydate), name, COUNT(DISTINCT id) AS user_count
+		FROM
+		pay
+		WHERE
+		fnum = #{fnum}
+		AND
+		date(paydate) = CURDATE()
+		GROUP BY
+		date(paydate), name
+		ORDER BY
+		name
+	</select>
+	
+	<select id="monthProductNum" resultType="map">
+		SELECT DAY(paydate) AS day, COUNT(DISTINCT merchant_uid) AS payCount
+		FROM pay
+		WHERE MONTH(paydate) = MONTH(CURRENT_DATE())
+		AND FNUM = #{fnum}
+		AND YEAR(paydate) = YEAR(CURRENT_DATE())
+		GROUP BY
+		DAY(paydate)
+		ORDER BY day;
+	</select>
+	
+	
+	<!-- 관리자 월별 매출 -->
+	<select id="sixMonthSale" resultType="map">
+	SELECT 
+    DATE_FORMAT(paydate, '%Y-%m') AS month, 
+    SUM(amount) AS 매출액
+	FROM 
+    pay
+	WHERE 
+    rstate = '결제완료'
+	GROUP BY 
+    DATE_FORMAT(paydate, '%Y-%m')
+	ORDER BY 
+    month ASC;
+	</select>
+	
+	
+	<!-- 관리자 이번달 일별매출 -->
+	<select id="daySale" resultType="map">
+	SELECT 
+    CAST(DATE_FORMAT(paydate, '%d') AS UNSIGNED) AS day, 
+    SUM(amount) AS 매출액
+ 	FROM 
+    pay
+ 	WHERE 
+    rstate = '결제완료'
+    AND DATE_FORMAT(paydate, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
+	 GROUP BY 
+    day
+ 	ORDER BY 
+    day ASC;
+	</select>
+	
+	<!-- 오늘 회원 가입 수 -->
+<select id="getTodayUserCount" resultType="int">
+    SELECT COUNT(*) FROM user
+    WHERE DATE(regdate) = CURRENT_DATE();
+</select>
+
+<!-- 이번 달 회원 가입 수 -->
+<select id="getMonthUserCount" resultType="int">
+    SELECT COUNT(*) FROM user
+    WHERE MONTH(regdate) = MONTH(CURRENT_DATE())
+      AND YEAR(regdate) = YEAR(CURRENT_DATE());
+      
+      
+</select>
+
+<!-- 오늘 매출액 -->
+<select id="getTodaySalesAmount" resultType="int">
+    SELECT IFNULL(SUM(amount), 0) FROM pay
+    WHERE DATE(paydate) = CURRENT_DATE()
+      AND rstate = '결제완료';
+</select>
+
+<!-- 이번 달 매출액 -->
+<select id="getMonthSalesAmount" resultType="int">
+    SELECT IFNULL(SUM(amount), 0) FROM pay
+    WHERE MONTH(paydate) = MONTH(CURRENT_DATE())
+      AND YEAR(paydate) = YEAR(CURRENT_DATE())
+      AND rstate = '결제완료';
+</select>
+	
+	
+	<!-- 오늘 결제 건수 -->
+<select id="getTodayOrderCount" resultType="int">
+    SELECT COUNT(*) FROM pay
+    WHERE DATE(paydate) = CURRENT_DATE()
+      AND rstate = '결제완료';
+</select>
+
+<!-- 이번 달 결제 건수 가져오기 -->
+<select id="getMonthOrderCount" resultType="int">
+    SELECT COUNT(*) FROM pay
+    WHERE MONTH(paydate) = MONTH(CURRENT_DATE())
+      AND YEAR(paydate) = YEAR(CURRENT_DATE())
+      AND rstate = '결제완료';
+</select>
+</mapper>
